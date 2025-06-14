@@ -10,6 +10,7 @@ library(viridis)
 library(plotly)
 library(DT)
 library(countrycode)
+library(maps)   
 
 ui <- fluidPage(
   
