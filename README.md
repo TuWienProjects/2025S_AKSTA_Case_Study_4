@@ -62,7 +62,7 @@ Data source: `data_cia2.json` (CIA World Factbook, 2020)
 
 ```r
 # Install required packages
-install.packages(c("shiny", "ggplot2", "plotly", "dplyr", "DT", "countrycode"))
+install.packages(c("shiny", "ggplot2", "plotly", "dplyr", "DT", "countrycode","map"))
 
 # Run the app
 shiny::runApp("path_to_folder_containing_app.R")
