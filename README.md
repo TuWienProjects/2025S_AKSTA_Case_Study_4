@@ -2,13 +2,17 @@
 
 This Shiny web application provides an interactive platform to explore and analyze global development indicators derived from the 2020 CIA World Factbook. Built for the **AKSTA Statistical Computing** course (Case Study 4), the app allows users to visualize, compare, and interpret country-level data in both univariate and multivariate contexts.
 
----
+
 
 ## Project Structure
 
+---
 ├── app.R # Main Shiny app file
+
 ├── data_cia2.json # Dataset file
+
 ├── www/ # (Optional) Folder for custom CSS or images
+
 └── README.md # Project description
 
 ---
