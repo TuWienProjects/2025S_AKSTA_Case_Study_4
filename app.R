@@ -214,7 +214,6 @@ server <- function(input, output, session) {
   output$scatter_plot <- renderPlotly({
     req(input$var_x, input$var_y, input$point_size)
     
-    # Clean axis labels
     label_x <- switch(input$var_x,
                       "expenditure" = "Expenditure on education",
                       "youth_unempl_rate" = "Youth unemployment rate",
@@ -237,12 +236,16 @@ server <- function(input, output, session) {
       color = "continent",
       size = input$point_size)) +
       geom_point(alpha = 0.7) +
-      geom_smooth(method = "loess", aes(group = continent), se = FALSE, color = "black", linewidth = 0.5, inherit.aes = FALSE) +
+      geom_smooth(
+        aes_string(x = input$var_x, y = input$var_y, group = "continent"),
+        method = "loess", se = FALSE, inherit.aes = FALSE
+      ) +
       labs(x = label_x, y = label_y) +
       theme_minimal()
     
     ggplotly(gg)
   })
+  
   
   
   
