@@ -1,10 +1,6 @@
 library(shiny)
 library(jsonlite)
 library(dplyr)
-library(DT)
-library(shiny)
-library(jsonlite)
-library(dplyr)
 library(ggplot2)
 library(viridis)
 library(plotly)
@@ -14,14 +10,12 @@ library(maps)
 
 ui <- fluidPage(
   
-  # App title and subtitle as shown in screenshot
   titlePanel("CIA World Factbook 2020"),
   
   tags$p(
     em("Welcome to my shiny app, which allows you to visualize variables from the CIA 2020 factbook on the world map, generate descriptive statistics and statistical graphics.")
   ),
   
-  # Tab structure (empty tabs for now)
   tabsetPanel(
     tabPanel("Univariate analysis",
              sidebarLayout(
@@ -99,8 +93,6 @@ ui <- fluidPage(
 )
 
 
-
-# Load data once when app starts
 cia_data <- fromJSON("data_cia2.json")
 
 server <- function(input, output, session) {
@@ -122,28 +114,36 @@ server <- function(input, output, session) {
   })
   
   
-  
-  # Show table when button clicked
   observeEvent(input$view_data, {
     output$raw_data_table <- renderDT({
       datatable(selected_data(), options = list(pageLength = 15))
     })
   })
   
-  
-  # Load world map and attach ISO3 codes
   world_map <- map_data("world")
-  world_map$ISO3 <- countrycode(sourcevar = world_map$region,
-                                origin = "country.name",
-                                destination = "iso3c")
+  world_map$ISO3 <- suppressWarnings(
+    countrycode(world_map$region, origin = "country.name", destination = "iso3c")
+  )
+  world_map <- world_map %>% filter(!is.na(ISO3))
+  
   
   # Join map with data
   map_data_joined <- reactive({
     req(input$uni_var)
     
-    left_join(world_map, 
-              cia_data %>% select(ISO3, value = all_of(input$uni_var), country),
-              by = "ISO3")
+    var_name <- input$uni_var
+    
+    data_to_join <- cia_data %>%
+      select(ISO3, value = all_of(var_name), country) %>%
+      mutate(value = if (var_name == "net_migr_rate") {
+        # Apply signed log1p transformation for better scale perception
+        sign(value) * log1p(abs(value))
+      } else {
+        value
+      }) %>%
+      filter(!is.na(value))
+    
+    left_join(world_map, data_to_join, by = "ISO3", relationship = "many-to-many")
   })
   
   output$map_plot <- renderPlotly({
@@ -158,7 +158,6 @@ server <- function(input, output, session) {
     ggplotly(gg, tooltip = "text")
   })
   
-  # Global boxplot
   output$global_boxplot <- renderPlotly({
     req(input$uni_var)
     label <- names(selected_data())[3]  # Get clean variable label
@@ -171,7 +170,6 @@ server <- function(input, output, session) {
     ggplotly(gg)
   })
   
-  # Global histogram + density
   output$global_density <- renderPlotly({
     req(input$uni_var)
     label <- names(selected_data())[3]
@@ -230,11 +228,11 @@ server <- function(input, output, session) {
                       "electricity_fossil_fuel" = "Electricity (fossil fuel)",
                       "life_expectancy" = "Life expectancy")
     
-    gg <- ggplot(cia_data, aes_string(
-      x = input$var_x,
-      y = input$var_y,
-      color = "continent",
-      size = input$point_size)) +
+    gg <- ggplot(cia_data, aes(
+      x = .data[[input$var_x]],
+      y = .data[[input$var_y]],
+      color = continent,
+      size = .data[[input$point_size]])) +
       geom_point(alpha = 0.7) +
       geom_smooth(
         aes_string(x = input$var_x, y = input$var_y, group = "continent"),
